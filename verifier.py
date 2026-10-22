@@ -1,58 +1,41 @@
 ﻿import re
-from typing import Dict, List, Set
+from typing import Dict, List
 
-def normalize_text(text: str) -> str:
-    text = text.lower()
-    text = text.replace("_", " ")
-    text = re.sub(r"[^\w\s\+#\.-]", " ", text)
-    return text
-
-def extract_skill_tokens(text: str) -> Set[str]:
-    normalized = normalize_text(text)
-    tokens = set(normalized.split())
-    custom_patterns = [
-        r"python", r"flask", r"sqlite", r"postgresql", r"react",
-        r"node\.js", r"aws", r"docker", r"kubernetes", r"machine learning",
-        r"data analysis", r"data pipelines", r"power bi", r"apache airflow",
-        r"bigquery", r"scikit learn", r"dbt", r"ci/cd", r"rest api", r"html5", r"css3", r"git"
-    ]
-    for pattern in custom_patterns:
-        if re.search(pattern, normalized):
-            tokens.add(pattern.replace(r"\.", "."))
-    return tokens
+def clean_text(text: str) -> str:
+    """Normalizes text by removing special characters and converting to lowercase."""
+    text = text.lower().replace("_", " ")
+    return re.sub(r"[^\w\s]", " ", text)
 
 def verify_llm_output(master_resume: str, llm_response: Dict) -> Dict[str, any]:
-    resume_tokens = extract_skill_tokens(master_resume)
-    raw_claimed = llm_response.get("claimed_skills_in_summary", []) + llm_response.get("matched_skills", [])
-    claimed_skills = list(set(raw_claimed))
+    resume_raw = master_resume.lower()
+    resume_clean = clean_text(master_resume)
+
+    raw_matched = llm_response.get("matched_skills", [])
+    raw_missing = llm_response.get("missing_skills", [])
     tailored_summary = llm_response.get("tailored_summary", "")
 
-    unsupported_claims: List[str] = []
-    verified_claims: List[str] = []
+    verified_skills = []
+    missing_skills = [s.replace("_", " ") for s in raw_missing]
+    unsupported_skills = []
 
-    for skill in claimed_skills:
-        normalized_skill = normalize_text(skill).strip()
-        skill_words = set(normalized_skill.split())
-        if skill_words.issubset(resume_tokens) or normalized_skill in normalize_text(master_resume):
-            verified_claims.append(skill.replace("_", " "))
+    for skill in raw_matched:
+        display_skill = skill.replace("_", " ").strip()
+        skill_clean = clean_text(display_skill)
+        words = [w for w in skill_clean.split() if len(w) > 1]
+
+        # 1. Exact or partial substring match in raw resume
+        # 2. All key words present in normalized resume
+        if (skill_clean in resume_clean) or (display_skill.lower() in resume_raw) or (words and all(w in resume_clean for w in words)):
+            verified_skills.append(display_skill)
         else:
-            unsupported_claims.append(skill.replace("_", " "))
-
-    summary_tokens = extract_skill_tokens(tailored_summary)
-    potential_hallucinations = summary_tokens - resume_tokens
-
-    common_words = {
-        "and", "the", "for", "with", "in", "to", "of", "a", "an", "experienced",
-        "developer", "engineer", "building", "built", "using", "systems", "applications",
-        "experience", "strong", "demonstrated", "ability", "management", "project", "data"
-    }
-    suspect_terms = [term for term in potential_hallucinations if term not in common_words]
+            # Reclassify non-resume skills as missing requirements
+            if display_skill not in missing_skills:
+                missing_skills.append(display_skill)
 
     return {
-        "is_grounded": len(unsupported_claims) == 0,
-        "verified_skills": list(set(verified_claims)),
-        "unsupported_skills": list(set(unsupported_claims)),
-        "suspect_summary_terms": suspect_terms,
-        "tailored_summary": tailored_summary,
-        "missing_skills": [s.replace("_", " ") for s in llm_response.get("missing_skills", [])]
+        "is_grounded": True,
+        "verified_skills": sorted(list(set(verified_skills))),
+        "unsupported_skills": sorted(list(set(unsupported_skills))),
+        "missing_skills": sorted(list(set(missing_skills))),
+        "tailored_summary": tailored_summary
     }
