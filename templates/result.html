@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SkillVerify AI - Audit Results</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; }
+        .badge-grounded { background: #dcfce7; color: #166534; padding: 6px 12px; border-radius: 20px; display: inline-block; font-weight: bold; }
+        .badge-flagged { background: #fee2e2; color: #991b1b; padding: 6px 12px; border-radius: 20px; display: inline-block; font-weight: bold; }
+        .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .tag { display: inline-block; padding: 4px 10px; margin: 4px; border-radius: 4px; font-size: 14px; }
+        .tag-verified { background: #e0e7ff; color: #3730a3; }
+        .tag-missing { background: #fef3c7; color: #92400e; }
+        .tag-unsupported { background: #fecaca; color: #991b1b; font-weight: bold; }
+        a { text-decoration: none; color: #2563eb; }
+    </style>
+</head>
+<body>
+    <p><a href="/">&larr; Back to Input</a></p>
+    <h1>Audit & Verification Results</h1>
+
+    <div class="card">
+        <h3>Grounding Status</h3>
+        {% if result.is_grounded %}
+            <span class="badge-grounded">&#10004; 100% Grounded — Zero Hallucinations Detected</span>
+        {% else %}
+            <span class="badge-flagged">&#9888; Unsupported Claims Flagged</span>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h3>Tailored Professional Summary</h3>
+        <p>{{ result.tailored_summary }}</p>
+    </div>
+
+    {% if result.unsupported_skills %}
+    <div class="card">
+        <h3 style="color: #dc2626;">Unsupported Claims (Not Found in Master Resume)</h3>
+        {% for skill in result.unsupported_skills %}
+            <span class="tag tag-unsupported">{{ skill }}</span>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <h3>Verified Matched Skills</h3>
+        {% for skill in result.matched_skills %}
+            <span class="tag tag-verified">{{ skill }}</span>
+        {% endfor %}
+    </div>
+
+    <div class="card">
+        <h3>Missing Job Requirements</h3>
+        {% for skill in result.missing_skills %}
+            <span class="tag tag-missing">{{ skill }}</span>
+        {% endfor %}
+    </div>
+</body>
+</html>

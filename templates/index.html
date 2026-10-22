@@ -1,0 +1,31 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SkillVerify AI - Grounded Job Matcher</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; color: #333; }
+        .container { background: #f9f9f9; padding: 30px; border-radius: 8px; border: 1px solid #ddd; }
+        textarea { width: 100%; height: 180px; padding: 10px; margin-top: 6px; margin-bottom: 20px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; }
+        button { background: #2563eb; color: white; padding: 12px 24px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
+        button:hover { background: #1d4ed8; }
+        .error { color: #dc2626; background: #fee2e2; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SkillVerify AI</h1>
+        <p>Analyze your resume against a job description with anti-hallucination verification.</p>
+        {% if error %}<div class="error">{{ error }}</div>{% endif %}
+        <form action="/analyze" method="POST">
+            <label><b>Master Resume</b> (Truth Source):</label>
+            <textarea name="master_resume" placeholder="Paste your complete resume details here..." required></textarea>
+            
+            <label><b>Target Job Description</b>:</label>
+            <textarea name="job_description" placeholder="Paste target job requirements here..." required></textarea>
+            
+            <button type="submit">Verify & Tailor Resume</button>
+        </form>
+    </div>
+</body>
+</html>
